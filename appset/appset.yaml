@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: customer-apps
+spec:
+  generators:
+    - git:
+        repoURL:  http://10.1.1.13:8081/root/nginx-ingress-controller.git
+        revision: HEAD
+        directories:
+          - path: customers/*
+  template:
+    metadata:
+      name: '{{path.basename}}-nginx'
+    spec:
+      project: default
+      source:
+        repoURL:  http://10.1.1.13:8081/root/nginx-ingress-controller.git
+        path: app
+        targetRevision: HEAD
+        helm:
+          valueFiles:
+            - ../customers/{{path.basename}}/values.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
